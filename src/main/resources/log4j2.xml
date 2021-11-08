@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration status="off" monitorInterval="30">
+    <properties>
+        <property name="LOG_SYS">${sys:logPath:-/data/logs}/clilog/sys/sys</property>
+        <property name="LOG_START">${sys:logPath:-/data/logs}/clilog/start/start</property>
+        <property name="LOG_HOME">${sys:logPath:-/data/logs}/clilog/home/home</property>
+        <property name="LOG_OTHER">${sys:logPath:-/data/logs}/clilog/other/other</property>
+        <property name="LOG_TEST">${sys:logPath:-/data/logs}/clilog/test/test</property>
+        <property name="LOG_LEVEL">${sys:logLevel}</property>
+    </properties>
+    <appenders>
+        <!-- Console -->
+        <Console name="CONSOLE" target="SYSTEM_OUT" follow="true">
+            <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p %t %m%n" />-->
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%c] %m%n"/>
+        </Console>
+
+        <!-- LOGGER_SYS -->
+        <RollingRandomAccessFile name="LOGGER_SYS" fileName="${LOG_SYS}.log"
+                                 filePattern="${LOG_SYS}.%d{yyyy-MM-dd}.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%c] %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+        </RollingRandomAccessFile>
+
+        <!-- LOGGER_START -->
+        <RollingRandomAccessFile name="LOGGER_START" fileName="${LOG_START}.log"
+                                 filePattern="${LOG_START}.%d{yyyy-MM-dd}.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%c] %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+        </RollingRandomAccessFile>
+
+        <!-- LOGGER_HOME -->
+        <RollingRandomAccessFile name="LOGGER_HOME" fileName="${LOG_HOME}.log"
+                                 filePattern="${LOG_HOME}.%d{yyyy-MM-dd}.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%c] %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+        </RollingRandomAccessFile>
+
+        <!-- LOGGER_OTHER -->
+        <RollingRandomAccessFile name="LOGGER_OTHER" fileName="${LOG_OTHER}.log"
+                                 filePattern="${LOG_OTHER}.%d{yyyy-MM-dd}.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%c] %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+        </RollingRandomAccessFile>
+
+        <!-- LOGGER_TEST -->
+        <RollingRandomAccessFile name="LOGGER_TEST" fileName="${LOG_TEST}.log"
+                                 filePattern="${LOG_TEST}.%d{yyyy-MM-dd}.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%c] %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+        </RollingRandomAccessFile>
+    </appenders>
+
+    <loggers>
+        <!-- System logger-->
+        <logger name="SystemLogger" level="${LOG_LEVEL}">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOGGER_SYS"/>
+        </logger>
+
+        <!--业务logger-->
+        <logger name="START" level="${LOG_LEVEL}" additivity="true">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOGGER_START"/>
+        </logger>
+
+        <logger name="HOME" level="${LOG_LEVEL}" additivity="true">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOGGER_HOME"/>
+        </logger>
+
+        <logger name="OTHER" level="${LOG_LEVEL}" additivity="true">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOGGER_OTHER"/>
+        </logger>
+
+        <logger name="TEST" level="${LOG_LEVEL}" additivity="true">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOGGER_TEST"/>
+        </logger>
+
+        <!-- Root -->
+        <root>
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </loggers>
+</configuration>
