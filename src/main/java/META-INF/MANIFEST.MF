@@ -1,3 +1,4 @@
 Manifest-Version: 1.0
 Main-Class: com.gow.clilog.main.MainServer
+Class-Path: lib/*.jar
 
