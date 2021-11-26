@@ -5,6 +5,7 @@ import com.gow.clilog.log.data.LogData;
 import com.gow.clilog.log.service.LogService;
 import com.gow.clilog.util.SystemLogger;
 
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -19,7 +20,7 @@ public abstract class AbstractLogQueue implements LogQueue {
 
     protected final String loggerName;
 
-    protected BlockingQueue<LogData> logQueue;
+    protected Queue<LogData> logQueue;
 
     protected LogService parent;
 
@@ -30,13 +31,13 @@ public abstract class AbstractLogQueue implements LogQueue {
     // 取走数量
     protected AtomicLong pollCounter = new AtomicLong();
 
-    protected AbstractLogQueue(String queueName, String loggerName, BlockingQueue<LogData> logQueue) {
+    protected AbstractLogQueue(String queueName, String loggerName, Queue<LogData> logQueue) {
         this.queueName = queueName;
         this.loggerName = loggerName;
         this.logQueue = logQueue;
     }
 
-    protected AbstractLogQueue(String loggerName, BlockingQueue<LogData> logQueue) {
+    protected AbstractLogQueue(String loggerName, Queue<LogData> logQueue) {
         this(loggerName + QUEUE_NAME_SUFFIX, loggerName, logQueue);
     }
 
@@ -70,15 +71,27 @@ public abstract class AbstractLogQueue implements LogQueue {
         if (null == logData || logData.source() == null) {
             return false;
         }
-        try {
-            logQueue.put(logData);
-            incOfferSuccessCnt();
-        } catch (InterruptedException ie) {
-            return false;
-        } catch (Throwable e) {
-            throw e;
-        } finally {
-            incOfferCnt();
+        if (isBlockQueue()) {
+            try {
+                blockingQueue().put(logData);
+                incOfferSuccessCnt();
+            } catch (InterruptedException ie) {
+                return false;
+            } catch (Throwable e) {
+                throw e;
+            } finally {
+                incOfferCnt();
+            }
+        } else {
+            try {
+                if (this.logQueue.offer(logData)) {
+                    incOfferSuccessCnt();
+                }
+            } catch (Throwable e) {
+                throw e;
+            } finally {
+                incOfferCnt();
+            }
         }
         return true;
     }
@@ -88,15 +101,28 @@ public abstract class AbstractLogQueue implements LogQueue {
         if (null == logData || logData.source() == null) {
             return false;
         }
-        try {
-            logQueue.offer(logData, timeout, unit);
-            incOfferSuccessCnt();
-        } catch (InterruptedException ie) {
-            return false;
-        } catch (Throwable e) {
-            throw e;
-        } finally {
-            incOfferCnt();
+        if (isBlockQueue()) {
+            try {
+                if (blockingQueue().offer(logData, timeout, unit)) {
+                    incOfferSuccessCnt();
+                }
+            } catch (InterruptedException ie) {
+                return false;
+            } catch (Throwable e) {
+                throw e;
+            } finally {
+                incOfferCnt();
+            }
+        } else {
+            try {
+                if (blockingQueue().offer(logData)) {
+                    incOfferSuccessCnt();
+                }
+            } catch (Throwable e) {
+                throw e;
+            } finally {
+                incOfferCnt();
+            }
         }
         return true;
     }
@@ -107,11 +133,25 @@ public abstract class AbstractLogQueue implements LogQueue {
             return null;
         }
         LogData poll = null;
-        try {
-            poll = logQueue.take();
-        } finally {
-            if (poll != null) {
-                incPollCnt();
+        if (isBlockQueue()) {
+            try {
+                poll = blockingQueue().take();
+            } catch (Throwable e) {
+                throw e;
+            } finally {
+                if (poll != null) {
+                    incPollCnt();
+                }
+            }
+        } else {
+            try {
+                poll = logQueue.poll();
+            } catch (Throwable e) {
+                throw e;
+            } finally {
+                if (poll != null) {
+                    incPollCnt();
+                }
             }
         }
         return poll;
@@ -126,11 +166,29 @@ public abstract class AbstractLogQueue implements LogQueue {
             throw new NullPointerException(queueName + " >>> poll unit is empty.");
         }
         LogData poll = null;
-        try {
-            poll = logQueue.poll(Math.max(timeout, 0L), unit);
-        } finally {
-            if (poll != null) {
-                incPollCnt();
+        if (isBlockQueue()) {
+            try {
+                poll = ((BlockingQueue<LogData>)logQueue).poll(Math.max(timeout, 0L), unit);
+            } finally {
+                if (poll != null) {
+                    incPollCnt();
+                }
+            }
+        } else {
+            try {
+                poll = logQueue.poll();
+                if (poll == null) {
+                    try {
+                        unit.sleep(Math.max(timeout, 0L));
+                    } catch (InterruptedException ie) {
+                        // skip
+                    }
+                    poll = logQueue.poll();
+                }
+            } finally {
+                if (poll != null) {
+                    incPollCnt();
+                }
             }
         }
         return poll;
@@ -142,8 +200,13 @@ public abstract class AbstractLogQueue implements LogQueue {
     }
 
     @Override
-    public <V extends LogData> BlockingQueue<V> innerQueue() {
-        return (BlockingQueue<V>)logQueue;
+    public <V extends LogData> Queue<V> innerQueue() {
+        return (Queue<V>)logQueue;
+    }
+
+    @Override
+    public boolean isBlockQueue() {
+        return logQueue instanceof BlockingQueue;
     }
 
     public String getQueueName() {
@@ -166,7 +229,7 @@ public abstract class AbstractLogQueue implements LogQueue {
         return pollCounter;
     }
 
-    public BlockingQueue<LogData> getLogQueue() {
+    public Queue<LogData> getLogQueue() {
         return logQueue;
     }
 
@@ -229,6 +292,10 @@ public abstract class AbstractLogQueue implements LogQueue {
     }
 
     // ***************************************** sub class implements ***************************************//
+
+    protected <V extends LogData> BlockingQueue<V> blockingQueue() {
+        return (BlockingQueue<V>)logQueue;
+    }
 
     /**
      * 其他参数的初始化工作

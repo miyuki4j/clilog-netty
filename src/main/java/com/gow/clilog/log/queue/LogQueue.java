@@ -4,6 +4,7 @@ import com.gow.clilog.log.Parentable;
 import com.gow.clilog.log.data.LogData;
 import com.gow.clilog.log.service.LogService;
 
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -107,7 +108,13 @@ public interface LogQueue extends Parentable {
      * @param <V>
      * @return
      */
-    <V extends LogData> BlockingQueue<V> innerQueue();
+    <V extends LogData> Queue<V> innerQueue();
+
+    /**
+     * 是否阻塞队列
+     * @return
+     */
+    boolean isBlockQueue();
 
     /**
      * 队列状态

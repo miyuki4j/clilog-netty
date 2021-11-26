@@ -3,6 +3,7 @@ package com.gow.clilog.log.queue.impl;
 import com.gow.clilog.log.data.LogData;
 import com.gow.clilog.log.queue.AbstractLogQueue;
 
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 
 /**
@@ -15,7 +16,7 @@ public class DefaultLogQueue extends AbstractLogQueue {
         super(queueName, loggerName, logQueue);
     }
 
-    public DefaultLogQueue(String loggerName, BlockingQueue<LogData> logQueue) {
+    public DefaultLogQueue(String loggerName, Queue<LogData> logQueue) {
         super(loggerName, logQueue);
     }
 

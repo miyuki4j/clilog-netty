@@ -10,8 +10,8 @@ import com.gow.clilog.log.queue.LogQueue;
 import com.gow.clilog.log.queue.impl.DefaultLogQueue;
 import com.gow.clilog.log.service.LogService;
 import com.gow.clilog.log.service.impl.DefaultLogService;
+import io.netty.util.internal.PlatformDependent;
 
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -31,7 +31,7 @@ public final class LogServiceFactory {
      */
     public static LogService createDirectService(String loggerName, LogManager parentManager, OnceTimePair pollTimePair)
         throws Exception {
-        LogQueue logQueue = new DefaultLogQueue(loggerName, new LinkedBlockingQueue<LogData>());
+        LogQueue logQueue = new DefaultLogQueue(loggerName, PlatformDependent.<LogData>newMpscQueue());
         LogHandler logHandler = new DefaultLogHandler(loggerName);
         LogService service = new DefaultLogService(loggerName, logQueue, logHandler, pollTimePair);
         service.parent(parentManager);
@@ -60,8 +60,8 @@ public final class LogServiceFactory {
      * @throws Exception
      */
     public static LogService createDispatchService(String loggerName, String serviceName, LogManager parentLogManager,
-                                                   OnceTimePair parentPollTimePair, LogManager directManager) throws Exception {
-        LogQueue logQueue = new DefaultLogQueue(loggerName, new LinkedBlockingQueue<LogData>());
+        OnceTimePair parentPollTimePair, LogManager directManager) throws Exception {
+        LogQueue logQueue = new DefaultLogQueue(loggerName, PlatformDependent.<LogData>newSpscQueue());
         LogHandler logHandler = new DispatchLogHandler(serviceName, directManager);
         LogService service = new DefaultLogService(loggerName, serviceName, logQueue, logHandler, parentPollTimePair);
         service.parent(parentLogManager);
@@ -94,7 +94,8 @@ public final class LogServiceFactory {
      */
     public static LogService createDispatch2DirectService(String loggerName, LogManager parentManager,
         OnceTimePair pollTimePair) throws Exception {
-        LogQueue logQueue = new DefaultLogQueue(loggerName, new PriorityBlockingQueue<com.gow.clilog.log.data.LogData>());
+        LogQueue logQueue =
+            new DefaultLogQueue(loggerName, new PriorityBlockingQueue<com.gow.clilog.log.data.LogData>());
         LogHandler logHandler = new DefaultLogHandler(loggerName);
         LogService service = new DefaultLogService(loggerName, logQueue, logHandler, pollTimePair);
         service.parent(parentManager);
